@@ -1,0 +1,40 @@
+###### API TO DELETE ALL GOODS EXCEPT FOR 1, FROM A SUPPLEMENTARY DELCARATION ON TSS (TRADER SUPPORT SERVICE)
+import requests, json
+from base64 import b64encode
+username = "Put username here"
+password = "Put password here"
+userAndPass = b64encode(b"%s:%s" % username,password).decode("ascii")
+headers = {
+'Accept':'application/json',
+'Content-Type':'application/json',
+'Request':'application/json',
+'Authorization' : 'Basic %s' %  userAndPass
+}
+##############################################################
+### FINDS ALL DRAFT SUPS AND TURNS THEM INTO A LIST OF IDS ###
+##############################################################
+DraftSUPs = requests.get("https://api.tsstestenv.co.uk/api/x_fhmrc_tss_api/v1/tss_api/supplementary_declarations?filter=status=draft",headers=headers)
+listofSUPs = []                            ##### THIS IS A LIST OF ALL SUP REFERENCES
+SUPDecList = DraftSUPs.json()['result']
+for y in SUPDecList:
+    listofSUPs.append(y['number'])
+##############################################################
+#### FINDS ALL GOODS ID FOR EACH DRAFT SUP REFERENCE (-1) ####
+##############################################################
+for x in listofSUPs:
+    GoodsIDFromSup = requests.get("https://api.tsstestenv.co.uk/api/x_fhmrc_tss_api/v1/tss_api/goods?sup_dec_number=%s" % x,headers=headers)
+    listofgoods = GoodsIDFromSup.json()['result']['goods'] ## LIST OF ALL GOODS IN A SUP DEC
+    if len(listofgoods) > 1:         
+        for x in listofgoods[:-1]:
+            topost = {
+            "op_type":"delete",
+            "goods_id":"%s" % x['goods_id']
+            }
+            TestDelete = requests.post("https://api.tsstestenv.co.uk/api/x_fhmrc_tss_api/v1/tss_api/goods",json=topost,headers=headers)        
+            print(TestDelete)
+            print(TestDelete.json())
+    else:
+        pass
+##############################################################
+################## the end and fully working #################
+##############################################################
